@@ -1,0 +1,11 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre8.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre8-shaded.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre11.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre11-shaded.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre12.jar",
+        "c:\\Program Files\\Microsoft JDBC DRIVER 12.2 for SQL Server\\sqljdbc_7.4\\enu\\mssql-jdbc-7.4.1.jre12-shaded.jar"
+    ]
+}
