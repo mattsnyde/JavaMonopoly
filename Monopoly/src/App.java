@@ -1,54 +1,63 @@
-import java.security.NoSuchAlgorithmException;
-import java.sql.*;
+import java.util.Scanner;
+import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 
 
 public class App {
-    public static void main(String[] args) {
-        DBInfo db = new DBInfo();
-        EncryptDecrypt et = new EncryptDecrypt();
-        String in = "test";
-        String hashed = "";
-        try {
-            hashed = et.encrypt(in);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+    public static void main(String[] args) throws ClassNotFoundException {
+        SqlQueries.createConnection();
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Menu driven program");
+        System.out.println("1. Create new game");
+        System.out.println("2. Enter existing game");
+
+        int gameOption = scanner.nextInt();
+        scanner.nextLine();
+        String gameName = scanner.nextLine();
+        String gamePassword = scanner.nextLine();
+        System.out.println("The val of gameOption: " + gameOption);
+        switch(gameOption){
+            case 1:
+                createNewGameCall(gamePassword, gameName);
+                System.out.println("Case 1 end");
+                break;
+            case 2:
+                
+                // settingGame(existingGame);
+                break;
+            default:
+                System.out.println("Potential problem with input");
         }
-        System.out.println("Hashed: " + hashed);
-        Boolean decrypted = false;
-        try {
-            decrypted = et.decrypt(in,hashed);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Decrypted: " + decrypted);
-        try {
-            // Load the SQL Server JDBC driver
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
-            // Establish a connection to SQL Server using Windows authentication and SSL encryption with trustServerCertificate=true
-            String connectionUrl = "jdbc:sqlserver://" + db.getCompName() + ";databaseName=" + db.getDbName() + ";integratedSecurity=true;trustServerCertificate=true;";
-            Connection connection = DriverManager.getConnection(connectionUrl);
+      
 
-            // Use the connection object here
-            // ...
+ 
 
-            String query = "Select * FROM ActionCard";
-            try (Statement stmt = connection.createStatement()) {
-                ResultSet rs = stmt.executeQuery(query);
-                while(rs.next()){
-                    int id = rs.getInt("actionid");
-                    System.out.println(id);
-                }
-            }catch(SQLException i){
-                System.out.println("SQL Exception: " + i.getMessage());
-            }
+      
+        scanner.close();
+        // DiceRoller.setDie();
+        // Vector<Integer> dieTest = DiceRoller.getDieValues();
+        // for(int elem: dieTest){
+        //     System.out.println(elem);
+        // }
+    }
+    public static void createNewGameCall(String gamePassword, String gameName){
+        SqlQueries.createNewGame(gamePassword, gameName)
+        .thenApply(ls -> {
+            System.out.println(ls.getGame().getGameBankBalance());
+            // Do something else with the LocalStorage object
+             return ls;
+        })
+        .thenAccept(ls -> {
+            System.out.println("Result of operation: ");
+            //Do something with the result like call another query using the information retrieved here 
 
-            System.out.println("Successfully connected");
-            connection.close();
-        } catch (ClassNotFoundException j) {
-            System.out.println("Could not load SQL Server JDBC driver: " + j.getMessage());
-        } catch (SQLException h) {
-            System.out.println("SQL Exception: " + h.getMessage());
-        }
-     }
+        })
+        .exceptionally(ex -> {
+            System.out.println("An exception occurred: " + ex.getMessage());
+            return null;
+        });
+    }
+ 
 }
