@@ -114,41 +114,125 @@ public class SqlQueries {
  
 
     //Query to retrieve game
-    public static CompletableFuture<Game> getExistingGameAsync(String gamePassword, String gameName) {
-        System.out.println("getExistingGameAsync");
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT g.gameid, g.gamename, g.gamebankbalance FROM Game AS g WHERE g.gamepassword = ? AND g.gamename = ?"
-                );
-                EncryptDecrypt ed = new EncryptDecrypt();
-                String pass = ed.encrypt(gamePassword);
-                byte[] varBinaryValue = pass.getBytes(StandardCharsets.UTF_8);
-                preparedStatement.setBytes(1, varBinaryValue);
-                preparedStatement.setString(2, gameName);
-                System.out.println("inside of completable future");
-                try (ResultSet rs = preparedStatement.executeQuery()) {
-                    if (rs.next()) {
-                        int gameid = rs.getInt("gameid");
-                        String gamename = rs.getString("gamename");
-                        int gamebankbalance = rs.getInt("gamebankbalance");
-                        Game game = new Game(gameid, gamename, gamebankbalance);
-                        System.out.println("got game");
-                        return game;
-                    } else {
-                        System.out.println("No results");
-                        return null;
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return null;
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-                return null;
+    public static CompletableFuture<LocalStorage> getExistingGameAsync(String gamePassword, String gameName) {
+        CompletableFuture<LocalStorage> future = new CompletableFuture<>();
+        String sqlQuery = "SELECT g.gameid, g.gamename, g.gamebankbalance FROM Game AS g WHERE g.gamepassword = ? AND g.gamename = ?";
+        try{
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+                
+            EncryptDecrypt ed = new EncryptDecrypt();
+            String pass = ed.encrypt(gamePassword);
+            byte[] varBinaryValue = pass.getBytes(StandardCharsets.UTF_8);
+            preparedStatement.setBytes(1, varBinaryValue);
+            preparedStatement.setString(2, gameName);
+           
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            int id = 0;
+            String gamen ="";
+            int gamebankbalance = 15140;
+            while(resultSet.next()){
+                id = resultSet.getInt("gameid");
+                gamen = resultSet.getString("gamename");
             }
-        });
+
+            Game game = new Game(id, gamen, gamebankbalance);
+            
+            LocalStorage ls = new LocalStorage();
+            ls.setGame(game);
+            future.complete(ls);
+            return future;
+            } catch (SQLException e) {
+                System.out.println("Error 1");
+                e.printStackTrace();
+                future.completeExceptionally(e);
+                return future.thenApply(result -> null);
+            } catch (NoSuchAlgorithmException e) {
+                System.out.println("Error 2");
+                e.printStackTrace();
+                future.completeExceptionally(e);
+                return future.thenApply(result -> null);
+            }     
     }
 
+    //Query to add Player to db
+    public static CompletableFuture<Player> addNewPlayers(int generalGameId, String playerName, String playerIcon){ //LocalStorage ls, 
+        System.out.println("Hit addNewPlayer with a gameId: " + generalGameId);
+        String existingGameQuery = "SELECT * FROM Player";
+        Vector<Integer> playerIds = new Vector<Integer>();
+        CompletableFuture<Player> future = new CompletableFuture<>();
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(existingGameQuery);
+            ResultSet resultSet = preparedStatement.executeQuery();
+    
+            while (resultSet.next()) {
+                int id = resultSet.getInt("playerid");
+                playerIds.add(id);
+            }
+    
+            Random rand = new Random();
+            int playerId = rand.nextInt(2147483646) + 1;
+    
+            while (playerIds.contains(playerId)) {
+                playerId = rand.nextInt(2147483646) + 1;
+            }
+    
+            PreparedStatement insertStatement = connection.prepareStatement("INSERT INTO Player (playerid, gameid, playername, playericon, balance) VALUES(?, ?, ?, ?, ?)");
+            insertStatement.setInt(1, playerId);
+            insertStatement.setInt(2, generalGameId);
+            // insertStatement.setInt(2, ls.getGame().getGameId());
+            insertStatement.setString(3, playerName);
+            insertStatement.setString(4, playerIcon);
+            insertStatement.setInt(5, 1500);
+
+            int rowsAffected = insertStatement.executeUpdate();
+            System.out.println("Num of rows affected: " + rowsAffected);
+    
+            Player player = new Player(playerId, generalGameId, playerName, playerIcon, 1500); //ls.getGame().getGameId()
+            future.complete(player);
+            return future;
+            //ls.setPlayer(player);
+
+        } catch (SQLException e) {
+            System.out.println("Error 1");
+            e.printStackTrace();
+            future.completeExceptionally(e);
+            return future.thenApply(result -> null);
+        }
+    }
+
+    //Return all existing players belonging to a game
+    public static CompletableFuture<Vector<Player>> getPreviousPlayers(int generalGameId){ //LocalStorage ls, 
+        System.out.println("Hit gettingPrevious players with a gameId: " + generalGameId);
+        String existingGameQuery = "SELECT * FROM Player WHERE gameid = ?";
+        Vector<Player> players = new Vector<Player>();
+        CompletableFuture<Vector<Player>> future = new CompletableFuture<>();
+
+        try {
+            System.out.println("Inside of try block");
+            PreparedStatement preparedStatement = connection.prepareStatement(existingGameQuery);
+            preparedStatement.setInt(1, generalGameId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int playerId = resultSet.getInt("playerid");
+                int gameId = resultSet.getInt("gameid");
+                String playerName = resultSet.getString("playername");
+                String playerIcon = resultSet.getString("playericon");
+                int playerBalance = resultSet.getInt("balance");
+                Player player = new Player(playerId, gameId, playerName, playerIcon, playerBalance);
+                players.add(player);
+            }   
+            future.complete(players);
+            return future;
+            //ls.setPlayer(player);
+
+        } catch (SQLException e) {
+            System.out.println("Error 1");
+            e.printStackTrace();
+            future.completeExceptionally(e);
+            return future.thenApply(result -> null);
+        }
+    }
  
 }
